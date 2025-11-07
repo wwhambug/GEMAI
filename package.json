@@ -1,9 +1,10 @@
 {
-  "name": "my-gem-project",
+  "name": "my-gemini-project",
   "version": "1.0.0",
   "private": true,
+  "type": "module",  <-- ✨ 올바른 위치: 최상위 레벨
   "dependencies": {
-  "type": "module", 
     "@google/generative-ai": "^0.14.1"
+    // 'type': 'module'은 여기에 있으면 안 됩니다.
   }
 }
