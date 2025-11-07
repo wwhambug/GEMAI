@@ -2,6 +2,7 @@
   "name": "my-gemini-project",
   "version": "1.0.0",
   "private": true,
+  "type": "module",  <-- 💡 이 줄을 추가합니다.
   "dependencies": {
     "@google/generative-ai": "^0.14.1"
   }
