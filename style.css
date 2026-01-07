@@ -35,3 +35,9 @@ body {
 .input-field { width: 100%; border: none; outline: none; resize: none; font-size: 14px; margin-bottom: 10px; }
 .input-actions { display: flex; justify-content: space-between; align-items: center; }
 .send-btn { width: 32px; height: 32px; border-radius: 50%; background: #333; color: #fff; border: none; cursor: pointer; }
+/* 사이드바 하단 flippy@figma.com 스타일 */
+.user-profile span {
+    font-size: 11px;
+    color: #666;
+    font-weight: 400;
+}
