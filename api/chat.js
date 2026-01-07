@@ -4,33 +4,34 @@ export default async function handler(req, res) {
   const { messages } = req.body;
   const apiKey = process.env.OPENROUTER_API_KEY;
 
-  if (!apiKey) return res.status(500).json({ error: 'API Key is missing in Vercel settings.' });
-
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://gemai.vercel.app", // 본인 도메인으로 변경 권장
-        "X-Title": "GEMAI Prototype"
+        "HTTP-Referer": "https://gamai.wwhambug.kro.kr", 
+        "X-Title": "GEMAI"
       },
       body: JSON.stringify({
-        "model": "google/gemini-2.0-flash-exp:free", // 가장 빠르고 안정적인 무료 모델
-        "messages": messages,
-        "temperature": 0.7
+        // 현재 가장 호출 성공률이 높은 무료 모델로 설정
+        "model": "google/gemini-2.0-flash-exp:free",
+        "messages": messages
       })
     });
 
     const data = await response.json();
 
     if (data.error) {
-      console.error('OpenRouter Error:', data.error);
-      return res.status(data.error.code || 500).json({ error: data.error.message });
+      // 429 에러(Rate Limit)인 경우 더 친절한 메시지 반환
+      const errorMessage = data.error.code === 429 
+        ? "현재 사용자가 많아 응답이 지연되고 있습니다. 잠시 후 다시 시도해주세요." 
+        : data.error.message;
+      return res.status(data.error.code || 500).json({ error: errorMessage });
     }
 
     return res.status(200).json({ content: data.choices[0].message.content });
   } catch (error) {
-    return res.status(500).json({ error: "Server communication error: " + error.message });
+    return res.status(500).json({ error: "서버 연결에 실패했습니다." });
   }
 }

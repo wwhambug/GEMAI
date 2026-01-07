@@ -2,49 +2,31 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GEMAI Chat</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <aside class="sidebar">
-        <div class="sidebar-header">
-            <span>☰ GEMAI chat</span>
-            <span class="new-chat-btn" id="new-chat-btn" style="cursor:pointer">+</span>
-        </div>
+        <div class="sidebar-header"><span>☰ GEMAI chat</span><span id="new-chat-btn" style="cursor:pointer">+</span></div>
         <div class="search-box"><input type="text" placeholder="Search chats..."></div>
-        <div class="chat-list" id="chat-list">
-            <div class="chat-item active">New Chat</div>
-        </div>
-        <div class="user-profile">
-            <div class="avatar">👤</div>
-            <span>flippy@figma.com</span>
-        </div>
+        <div class="chat-list" id="chat-list"><div class="chat-item active">New Chat</div></div>
+        <div class="user-profile"><div class="avatar"></div><span>flippy@figma.com</span></div>
     </aside>
 
     <main class="main-content">
         <h1 class="main-title">GEMAI</h1>
         <div class="split-view">
             <div class="panel chat-display" id="chat-display">
-                <div class="message-box ai-msg">
-                    <span class="ai-icon">⟡</span>
-                    <div class="ai-text">Hello! How can I help you today?</div>
-                </div>
+                <div class="message-box ai-msg"><span class="ai-icon">⟡</span><div class="ai-text">Hello! How can I help you today?</div></div>
             </div>
-            <div class="panel face-panel">
-                <span class="face-text">(FACE Area)</span>
-            </div>
+            <div class="panel face-panel" id="face-area"><span class="face-text">(FACE Area)</span></div>
         </div>
         <div class="input-wrapper">
             <div class="input-container">
                 <textarea id="user-input" class="input-field" rows="1" placeholder="What would you like to know?"></textarea>
                 <div class="input-actions">
-                    <div class="action-icons">
-                        <span title="Image">🖼️</span>
-                        <span title="Code">🔗</span>
-                        <span title="Voice">🎤</span>
-                    </div>
+                    <div class="action-icons"><span>🖼️</span><span>🔗</span><span>🎤</span></div>
                     <button id="send-btn" class="send-btn">↑</button>
                 </div>
             </div>
@@ -57,10 +39,15 @@
         const sendBtn = document.getElementById('send-btn');
         let chatHistory = [];
 
+        // 입력창 높이 자동 조절
+        userInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
         function appendMessage(role, text) {
             const msgDiv = document.createElement('div');
             msgDiv.className = role === 'user' ? 'message-box user-msg' : 'message-box ai-msg';
-            
             if (role === 'user') {
                 msgDiv.textContent = text;
             } else {
@@ -77,6 +64,7 @@
 
             appendMessage('user', text);
             userInput.value = '';
+            userInput.style.height = 'auto'; // 높이 초기화
 
             const loading = document.createElement('div');
             loading.className = 'message-box ai-msg';
@@ -95,19 +83,23 @@
 
                 if (data.content) {
                     appendMessage('assistant', data.content);
-                    chatHistory.push({ role: 'user', content: text });
-                    chatHistory.push({ role: 'assistant', content: data.content });
+                    chatHistory.push({ role: 'user', content: text }, { role: 'assistant', content: data.content });
                 } else {
-                    appendMessage('assistant', `⚠️ Error: ${data.error || 'Unknown error'}`);
+                    appendMessage('assistant', `⚠️ ${data.error}`);
                 }
             } catch (err) {
                 if (chatDisplay.contains(loading)) chatDisplay.removeChild(loading);
-                appendMessage('assistant', '❌ Connection failed.');
+                appendMessage('assistant', '❌ 연결 오류가 발생했습니다.');
             }
         }
 
         sendBtn.addEventListener('click', handleSend);
-        userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } });
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        });
     </script>
 </body>
 </html>
