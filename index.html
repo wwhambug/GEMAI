@@ -2,46 +2,29 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>GEMAI Chat</title>
+    <title>GEMAI</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     <aside class="sidebar">
-        <div class="sidebar-header">
-            <span>☰ GEMAI chat</span>
-            <div class="new-chat-btn" id="new-chat-btn" title="New Chat">+</div>
-        </div>
-        <div class="search-box"><input type="text" id="search-input" placeholder="Search chats..."></div>
-        <div class="chat-list" id="chat-list">
-            <div class="chat-item active">New Chat</div>
-        </div>
-        <div class="user-profile">
-            <div class="avatar">👤</div>
-            <span>flippy@figma.com</span>
-        </div>
+        <div class="sidebar-header"><span>☰ GEMAI chat</span><div class="new-chat-btn" id="new-chat-btn">+</div></div>
+        <div class="chat-list" id="chat-list"></div>
     </aside>
 
     <main class="main-content">
         <h1 class="main-title">GEMAI</h1>
         <div class="split-view">
-            <div class="panel chat-display" id="chat-display">
-                <div class="ai-msg">
-                    <span class="ai-icon">⟡</span>
-                    <div class="ai-text">반갑습니다! 무엇을 도와드릴까요?</div>
-                </div>
-            </div>
-            <div class="panel face-panel">(FACE Area)</div>
-        </div>
-        <div class="input-wrapper">
-            <div class="input-container">
-                <textarea id="user-input" class="input-field" rows="1" placeholder="What would you like to know?"></textarea>
-                <div class="input-actions">
-                    <div class="action-icons"><span>🖼️</span><span>🔗</span><span>🎤</span></div>
-                    <button id="send-btn" class="send-btn">↑</button>
-                </div>
+            <div class="panel chat-display" id="chat-display"></div>
+            <div class="panel face-panel">
+                <div class="orb" id="orb"><span class="face-emoji" id="face-emoji">😴</span></div>
+                <div id="status-text" style="margin-top:20px; font-size:12px; color:#999;">Sleeping...</div>
             </div>
         </div>
+        <div class="input-wrapper"><div class="input-container">
+            <textarea id="user-input" class="input-field" rows="1" placeholder="What would you like to know?"></textarea>
+            <div class="input-actions"><div>🖼️ 🔗 🎤</div><button id="send-btn" class="send-btn">↑</button></div>
+        </div></div>
     </main>
 
     <script>
@@ -49,91 +32,81 @@
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
         const chatList = document.getElementById('chat-list');
-        const newChatBtn = document.getElementById('new-chat-btn');
-        
-        let chatHistory = [];
+        const orb = document.getElementById('orb');
+        const faceEmoji = document.getElementById('face-emoji');
+        const statusText = document.getElementById('status-text');
 
-        // 텍스트 영역 자동 높이 조절
-        userInput.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = (this.scrollHeight) + 'px';
-        });
+        let chats = JSON.parse(localStorage.getItem('gemai_db')) || [];
+        let currentChatId = null;
 
-        // 사이드바 새 채팅 기능
-        newChatBtn.addEventListener('click', () => {
-            chatDisplay.innerHTML = '<div class="ai-msg"><span class="ai-icon">⟡</span><div class="ai-text">새로운 대화를 시작합니다.</div></div>';
-            chatHistory = [];
-            const items = document.querySelectorAll('.chat-item');
-            items.forEach(i => i.classList.remove('active'));
-            const newItem = document.createElement('div');
-            newItem.className = 'chat-item active';
-            newItem.textContent = 'New Chat';
-            chatList.prepend(newItem);
-        });
+        function setAIState(state) {
+            orb.className = 'orb';
+            if(state === 'sleeping') { faceEmoji.textContent='😴'; statusText.textContent='Sleeping...'; }
+            else if(state === 'thinking') { orb.classList.add('thinking'); faceEmoji.textContent='🤔'; statusText.textContent='Thinking...'; }
+            else if(state === 'speaking') { orb.classList.add('speaking'); faceEmoji.textContent=['🗣️','💬'][Math.floor(Math.random()*2)]; statusText.textContent='Speaking...'; }
+        }
 
-        function appendMessage(role, text) {
-            const group = document.createElement('div');
-            group.className = 'message-group';
-            
-            if (role === 'user') {
-                group.innerHTML = `<div class="message-box user-msg">${text}</div>`;
-                // 사이드바 제목 업데이트 (첫 메시지 기준)
-                if (chatHistory.length === 0) {
-                    document.querySelector('.chat-item.active').textContent = text;
-                }
-            } else {
-                const htmlContent = marked.parse(text);
-                group.innerHTML = `
-                    <div class="ai-msg">
-                        <span class="ai-icon">⟡</span>
-                        <div class="ai-text">${htmlContent}</div>
-                    </div>`;
-            }
+        function renderList() {
+            chatList.innerHTML = '';
+            chats.forEach(c => {
+                const div = document.createElement('div');
+                div.className = `chat-item ${c.id === currentChatId ? 'active' : ''}`;
+                div.innerHTML = `<span onclick="loadChat('${c.id}')">${c.title}</span>
+                    <div class="chat-actions"><button onclick="renameChat('${c.id}')">✏️</button><button onclick="deleteChat('${c.id}')">🗑️</button></div>`;
+                chatList.appendChild(div);
+            });
+        }
+
+        function loadChat(id) {
+            currentChatId = id;
+            const chat = chats.find(c => c.id === id);
+            chatDisplay.innerHTML = '';
+            chat.history.forEach(m => appendUI(m.role, m.content));
+            renderList();
+        }
+
+        document.getElementById('new-chat-btn').onclick = () => {
+            currentChatId = Date.now().toString();
+            chats.unshift({id: currentChatId, title: 'New Chat', history: []});
+            save(); loadChat(currentChatId);
+        };
+
+        window.deleteChat = (id) => { chats = chats.filter(c => c.id !== id); save(); location.reload(); };
+        window.renameChat = (id) => { const n = prompt("Name:"); if(n){ chats.find(c=>c.id===id).title=n; save(); renderList(); }};
+        function save() { localStorage.setItem('gemai_db', JSON.stringify(chats)); }
+
+        function appendUI(role, text) {
+            const group = document.createElement('div'); group.className = 'message-group';
+            group.innerHTML = role === 'user' ? `<div class="message-box user-msg">${text}</div>` : 
+                `<div class="ai-msg"><span class="ai-icon">⟡</span><div class="ai-text">${marked.parse(text)}</div></div>`;
             chatDisplay.appendChild(group);
             chatDisplay.scrollTop = chatDisplay.scrollHeight;
         }
 
         async function handleSend() {
-            const text = userInput.value.trim();
-            if (!text) return;
-
-            appendMessage('user', text);
-            userInput.value = '';
-            userInput.style.height = 'auto';
-
-            const loading = document.createElement('div');
-            loading.className = 'ai-msg';
-            loading.innerHTML = `<span class="ai-icon">⟡</span><div class="ai-text">생각 중...</div>`;
-            chatDisplay.appendChild(loading);
-
+            const text = userInput.value.trim(); if(!text) return;
+            if(!currentChatId) document.getElementById('new-chat-btn').click();
+            
+            appendUI('user', text);
+            const chat = chats.find(c => c.id === currentChatId);
+            if(chat.title === 'New Chat') chat.title = text.substring(0,10);
+            chat.history.push({role:'user', content:text});
+            
+            userInput.value = ''; setAIState('thinking');
             try {
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ messages: [...chatHistory, { role: 'user', content: text }] })
-                });
-                const data = await response.json();
-                chatDisplay.removeChild(loading);
-
-                if (data.content) {
-                    appendMessage('assistant', data.content);
-                    chatHistory.push({ role: 'user', content: text }, { role: 'assistant', content: data.content });
-                } else {
-                    appendMessage('assistant', `⚠️ 에러: ${data.error}`);
-                }
-            } catch (err) {
-                if (chatDisplay.contains(loading)) chatDisplay.removeChild(loading);
-                appendMessage('assistant', '❌ 연결 실패');
-            }
+                const res = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({messages: chat.history})});
+                const data = await res.json();
+                setAIState('speaking');
+                appendUI('assistant', data.content);
+                chat.history.push({role:'assistant', content:data.content});
+                save(); renderList();
+                setTimeout(() => setAIState('sleeping'), 3000);
+            } catch { setAIState('sleeping'); }
         }
 
-        sendBtn.addEventListener('click', handleSend);
-        userInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-            }
-        });
+        sendBtn.onclick = handleSend;
+        userInput.onkeydown = (e) => { if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); handleSend(); }};
+        if(chats.length > 0) loadChat(chats[0].id); else setAIState('sleeping');
     </script>
 </body>
 </html>
