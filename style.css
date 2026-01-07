@@ -29,17 +29,37 @@ body { font-family: 'Inter', sans-serif; background: #fff; height: 100vh; displa
 
 /* 하단 입력창 (텍스트 밀림 수정) */
 .input-wrapper { position: absolute; bottom: 40px; left: 40px; right: 40px; }
+/* 하단 입력창 영역 수정 */
 .input-container {
-    border: 1px solid #E0E0E0; border-radius: 16px; padding: 16px 20px;
-    background: #FFF; box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-    display: flex; flex-direction: column;
+    border: 1px solid #E0E0E0;
+    border-radius: 16px;
+    padding: 16px 20px;
+    background: #FFF;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    display: flex;
+    flex-direction: column;
 }
+
 .input-field { 
-    width: 100%; border: none; outline: none; resize: none; 
-    font-size: 15px; font-family: inherit; min-height: 24px; 
-    margin-bottom: 12px; line-height: 1.5;
+    width: 100%; 
+    border: none; 
+    outline: none; 
+    resize: none; 
+    font-size: 15px; 
+    font-family: inherit; 
+    min-height: 24px; 
+    max-height: 150px; /* 너무 길어지면 스크롤 생성 */
+    margin-bottom: 12px; 
+    line-height: 1.5;
+    overflow-y: auto;
 }
-.input-actions { display: flex; justify-content: space-between; align-items: center; }
+
+.input-actions { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    border-top: none; /* 이전 디자인의 선 제거 */
+}
 .action-icons { display: flex; gap: 14px; font-size: 18px; filter: grayscale(1); opacity: 0.5; }
 .send-btn { 
     width: 34px; height: 34px; border-radius: 50%; background: #000; color: #FFF; 
