@@ -11,13 +11,16 @@
     <aside class="sidebar">
         <div class="sidebar-header">
             <span>☰ GEMAI chat</span>
-            <span class="new-chat-btn" id="new-chat-btn">+</span>
+            <span class="new-chat-btn" id="new-chat-btn" style="cursor:pointer">+</span>
         </div>
         <div class="search-box"><input type="text" placeholder="Search chats..."></div>
         <div class="chat-list" id="chat-list">
             <div class="chat-item active">New Chat</div>
         </div>
-        <div class="user-profile"><div class="avatar">👤</div><span>user@example.com</span></div>
+        <div class="user-profile">
+            <div class="avatar">👤</div>
+            <span>flippy@figma.com</span>
+        </div>
     </aside>
 
     <main class="main-content">
@@ -26,7 +29,7 @@
             <div class="panel chat-display" id="chat-display">
                 <div class="message-box ai-msg">
                     <span class="ai-icon">⟡</span>
-                    <div class="ai-text">반갑습니다. 무엇을 도와드릴까요?</div>
+                    <div class="ai-text">Hello! How can I help you today?</div>
                 </div>
             </div>
             <div class="panel face-panel">
@@ -35,10 +38,12 @@
         </div>
         <div class="input-wrapper">
             <div class="input-container">
-                <textarea id="user-input" class="input-field" rows="1" placeholder="메시지를 입력하세요..."></textarea>
+                <textarea id="user-input" class="input-field" rows="1" placeholder="What would you like to know?"></textarea>
                 <div class="input-actions">
                     <div class="action-icons">
-                        <span>🖼️</span><span>code</span><span>🎤</span>
+                        <span title="Image">🖼️</span>
+                        <span title="Code">🔗</span>
+                        <span title="Voice">🎤</span>
                     </div>
                     <button id="send-btn" class="send-btn">↑</button>
                 </div>
@@ -46,63 +51,63 @@
         </div>
     </main>
 
-<script>
-    const chatDisplay = document.getElementById('chat-display');
-    const userInput = document.getElementById('user-input');
-    const sendBtn = document.getElementById('send-btn');
-    let chatHistory = [];
+    <script>
+        const chatDisplay = document.getElementById('chat-display');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        let chatHistory = [];
 
-    function appendMessage(role, text) {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = role === 'user' ? 'message-box user-msg' : 'message-box ai-msg';
-        
-        if (role === 'user') {
-            msgDiv.textContent = text;
-        } else {
-            const parsed = typeof marked !== 'undefined' ? marked.parse(text) : text;
-            msgDiv.innerHTML = `<span class="ai-icon">⟡</span><div class="ai-text">${parsed}</div>`;
-        }
-        chatDisplay.appendChild(msgDiv);
-        chatDisplay.scrollTop = chatDisplay.scrollHeight;
-    }
-
-    async function handleSend() {
-        const text = userInput.value.trim();
-        if (!text) return;
-
-        appendMessage('user', text);
-        userInput.value = '';
-
-        const loading = document.createElement('div');
-        loading.className = 'message-box ai-msg';
-        loading.innerHTML = `<span class="ai-icon">⟡</span><div class="ai-text">Thinking...</div>`;
-        chatDisplay.appendChild(loading);
-
-        try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: [...chatHistory, { role: 'user', content: text }] })
-            });
-
-            const data = await response.json();
-            chatDisplay.removeChild(loading);
-
-            if (data.content) {
-                appendMessage('assistant', data.content);
-                chatHistory.push({ role: 'user', content: text });
-                chatHistory.push({ role: 'assistant', content: data.content });
+        function appendMessage(role, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = role === 'user' ? 'message-box user-msg' : 'message-box ai-msg';
+            
+            if (role === 'user') {
+                msgDiv.textContent = text;
             } else {
-                appendMessage('assistant', `⚠️ 에러: ${data.error || '알 수 없는 오류'}`);
+                const parsed = typeof marked !== 'undefined' ? marked.parse(text) : text;
+                msgDiv.innerHTML = `<span class="ai-icon">⟡</span><div class="ai-text">${parsed}</div>`;
             }
-        } catch (err) {
-            if (chatDisplay.contains(loading)) chatDisplay.removeChild(loading);
-            appendMessage('assistant', '❌ 시스템 오류가 발생했습니다.');
+            chatDisplay.appendChild(msgDiv);
+            chatDisplay.scrollTop = chatDisplay.scrollHeight;
         }
-    }
 
-    sendBtn.addEventListener('click', handleSend);
-    userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } });
-</script>
+        async function handleSend() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            appendMessage('user', text);
+            userInput.value = '';
+
+            const loading = document.createElement('div');
+            loading.className = 'message-box ai-msg';
+            loading.innerHTML = `<span class="ai-icon">⟡</span><div class="ai-text">Thinking...</div>`;
+            chatDisplay.appendChild(loading);
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: [...chatHistory, { role: 'user', content: text }] })
+                });
+
+                const data = await response.json();
+                chatDisplay.removeChild(loading);
+
+                if (data.content) {
+                    appendMessage('assistant', data.content);
+                    chatHistory.push({ role: 'user', content: text });
+                    chatHistory.push({ role: 'assistant', content: data.content });
+                } else {
+                    appendMessage('assistant', `⚠️ Error: ${data.error || 'Unknown error'}`);
+                }
+            } catch (err) {
+                if (chatDisplay.contains(loading)) chatDisplay.removeChild(loading);
+                appendMessage('assistant', '❌ Connection failed.');
+            }
+        }
+
+        sendBtn.addEventListener('click', handleSend);
+        userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } });
+    </script>
 </body>
 </html>

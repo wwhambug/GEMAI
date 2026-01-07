@@ -4,32 +4,33 @@ export default async function handler(req, res) {
   const { messages } = req.body;
   const apiKey = process.env.OPENROUTER_API_KEY;
 
+  if (!apiKey) return res.status(500).json({ error: 'API Key is missing in Vercel settings.' });
+
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://gemai.vercel.app", 
-        "X-Title": "GEMAI"
+        "HTTP-Referer": "https://gemai.vercel.app", // 본인 도메인으로 변경 권장
+        "X-Title": "GEMAI Prototype"
       },
       body: JSON.stringify({
-        // 무료 티어 중 현재 가장 안정적인 모델로 변경
-        "model": "meta-llama/llama-3.1-8b-instruct:free",
+        "model": "google/gemini-2.0-flash-exp:free", // 가장 빠르고 안정적인 무료 모델
         "messages": messages,
         "temperature": 0.7
       })
     });
 
     const data = await response.json();
-    
-    // OpenRouter에서 에러를 보낸 경우 처리
+
     if (data.error) {
+      console.error('OpenRouter Error:', data.error);
       return res.status(data.error.code || 500).json({ error: data.error.message });
     }
 
     return res.status(200).json({ content: data.choices[0].message.content });
   } catch (error) {
-    return res.status(500).json({ error: "Server communication error" });
+    return res.status(500).json({ error: "Server communication error: " + error.message });
   }
 }
