@@ -1,117 +1,58 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GEMAI Chat</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-</head>
-<body>
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <span>☰ GEMAI chat</span>
-            <span class="new-chat-btn" id="new-chat-btn">+</span>
-        </div>
-        <div class="search-box"><input type="text" placeholder="Search chats..."></div>
-        <div class="chat-list" id="chat-list">
-            <div class="chat-item active">New Chat</div>
-        </div>
-        <div class="user-profile"><div class="avatar">👤</div><span>user@example.com</span></div>
-    </aside>
+<script>
+    const chatDisplay = document.getElementById('chat-display');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    let chatHistory = [];
 
-    <main class="main-content">
-        <h1 class="main-title">GEMAI</h1>
-        <div class="split-view">
-            <div class="panel chat-display" id="chat-display">
-                <div class="message-box ai-msg">
-                    <span class="ai-icon">⟡</span>
-                    <div class="ai-text">반갑습니다. 무엇을 도와드릴까요?</div>
-                </div>
-            </div>
-            <div class="panel face-panel">
-                <span class="face-text">(FACE Area)</span>
-            </div>
-        </div>
-        <div class="input-wrapper">
-            <div class="input-container">
-                <textarea id="user-input" class="input-field" rows="1" placeholder="메시지를 입력하세요..."></textarea>
-                <div class="input-actions">
-                    <div class="action-icons">
-                        <span>🖼️</span><span>code</span><span>🎤</span>
-                    </div>
-                    <button id="send-btn" class="send-btn">↑</button>
-                </div>
-            </div>
-        </div>
-    </main>
+    function appendMessage(role, text) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = role === 'user' ? 'message-box user-msg' : 'message-box ai-msg';
+        
+        if (role === 'user') {
+            msgDiv.textContent = text;
+        } else {
+            const parsed = typeof marked !== 'undefined' ? marked.parse(text) : text;
+            msgDiv.innerHTML = `<span class="ai-icon">⟡</span><div class="ai-text">${parsed}</div>`;
+        }
+        chatDisplay.appendChild(msgDiv);
+        chatDisplay.scrollTop = chatDisplay.scrollHeight;
+    }
 
-    <script>
-        const chatDisplay = document.getElementById('chat-display');
-        const userInput = document.getElementById('user-input');
-        const sendBtn = document.getElementById('send-btn');
-        let chatHistory = [];
+    async function handleSend() {
+        const text = userInput.value.trim();
+        if (!text) return;
 
-        function appendMessage(role, text) {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = role === 'user' ? 'message-box user-msg' : 'message-box ai-msg';
-            
-            if (role === 'user') {
-                msgDiv.textContent = text;
+        appendMessage('user', text);
+        userInput.value = '';
+
+        const loading = document.createElement('div');
+        loading.className = 'message-box ai-msg';
+        loading.innerHTML = `<span class="ai-icon">⟡</span><div class="ai-text">Thinking...</div>`;
+        chatDisplay.appendChild(loading);
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: [...chatHistory, { role: 'user', content: text }] })
+            });
+
+            const data = await response.json();
+            chatDisplay.removeChild(loading);
+
+            if (data.content) {
+                appendMessage('assistant', data.content);
+                chatHistory.push({ role: 'user', content: text });
+                chatHistory.push({ role: 'assistant', content: data.content });
             } else {
-                const parsed = typeof marked !== 'undefined' ? marked.parse(text) : text;
-                msgDiv.innerHTML = `<span class="ai-icon">⟡</span><div class="ai-text">${parsed}</div>`;
+                appendMessage('assistant', `⚠️ 에러: ${data.error || '알 수 없는 오류'}`);
             }
-            chatDisplay.appendChild(msgDiv);
-            chatDisplay.scrollTop = chatDisplay.scrollHeight;
+        } catch (err) {
+            if (chatDisplay.contains(loading)) chatDisplay.removeChild(loading);
+            appendMessage('assistant', '❌ 시스템 오류가 발생했습니다.');
         }
+    }
 
-        async function handleSend() {
-            const text = userInput.value.trim();
-            if (!text) return;
-
-            appendMessage('user', text);
-            userInput.value = '';
-
-            // 로딩 표시
-            const loading = document.createElement('div');
-            loading.className = 'message-box ai-msg';
-            loading.innerHTML = `<span class="ai-icon">⟡</span><div class="ai-text">생각 중...</div>`;
-            chatDisplay.appendChild(loading);
-
-            try {
-                // Vercel Serverless Function 호출
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        messages: [...chatHistory, { role: 'user', content: text }] 
-                    })
-                });
-
-                const data = await response.json();
-                chatDisplay.removeChild(loading);
-
-                if (data.content) {
-                    appendMessage('assistant', data.content);
-                    chatHistory.push({ role: 'user', content: text });
-                    chatHistory.push({ role: 'assistant', content: data.content });
-                } else {
-                    throw new Error(data.error || '응답 오류');
-                }
-            } catch (err) {
-                chatDisplay.removeChild(loading);
-                appendMessage('assistant', '오류 발생: ' + err.message);
-            }
-        }
-
-        sendBtn.addEventListener('click', handleSend);
-        userInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-            }
-        });
-    </script>
-</body>
-</html>
+    sendBtn.addEventListener('click', handleSend);
+    userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } });
+</script>
