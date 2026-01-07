@@ -2,13 +2,18 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>GEMAI</title>
+    <title>GEMAI Chat</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 </head>
 <body>
     <aside class="sidebar">
-        <div class="sidebar-header"><span>☰ GEMAI chat</span><div class="new-chat-btn" id="new-chat-btn">+</div></div>
+        <div class="sidebar-header">
+            <span>☰ GEMAI chat</span>
+            <div class="new-chat-btn" id="new-chat-btn">+</div>
+        </div>
         <div class="chat-list" id="chat-list"></div>
     </aside>
 
@@ -21,10 +26,15 @@
                 <div id="status-text" style="margin-top:20px; font-size:12px; color:#999;">Sleeping...</div>
             </div>
         </div>
-        <div class="input-wrapper"><div class="input-container">
-            <textarea id="user-input" class="input-field" rows="1" placeholder="What would you like to know?"></textarea>
-            <div class="input-actions"><div>🖼️ 🔗 🎤</div><button id="send-btn" class="send-btn">↑</button></div>
-        </div></div>
+        <div class="input-wrapper">
+            <div class="input-container">
+                <textarea id="user-input" class="input-field" rows="1" placeholder="What would you like to know?"></textarea>
+                <div class="input-actions">
+                    <div class="tools">🖼️ 🔗 🎤</div>
+                    <button id="send-btn" class="send-btn">↑</button>
+                </div>
+            </div>
+        </div>
     </main>
 
     <script>
@@ -36,7 +46,15 @@
         const faceEmoji = document.getElementById('face-emoji');
         const statusText = document.getElementById('status-text');
 
-        let chats = JSON.parse(localStorage.getItem('gemai_v2')) || [];
+        // marked 설정: 하이라이트 적용
+        marked.setOptions({
+            highlight: function(code, lang) {
+                return hljs.highlightAuto(code).value;
+            },
+            breaks: true
+        });
+
+        let chats = JSON.parse(localStorage.getItem('gemai_storage')) || [];
         let currentChatId = null;
 
         function setAIState(state) {
@@ -51,8 +69,12 @@
             chats.forEach(c => {
                 const div = document.createElement('div');
                 div.className = `chat-item ${c.id === currentChatId ? 'active' : ''}`;
-                div.innerHTML = `<span onclick="loadChat('${c.id}')">${c.title}</span>
-                    <div class="chat-actions"><button onclick="renameChat('${c.id}')">✏️</button><button onclick="deleteChat('${c.id}')">🗑️</button></div>`;
+                div.innerHTML = `
+                    <span class="chat-title-text" onclick="loadChat('${c.id}')">${c.title}</span>
+                    <div class="chat-actions">
+                        <button onclick="renameChat('${c.id}')">✏️</button>
+                        <button onclick="deleteChat('${c.id}')">🗑️</button>
+                    </div>`;
                 chatList.appendChild(div);
             });
         }
@@ -61,56 +83,103 @@
             currentChatId = id;
             const chat = chats.find(c => c.id === id);
             chatDisplay.innerHTML = '';
-            chat.history.forEach(m => appendUI(m.role, m.content));
+            if (chat) {
+                chat.history.forEach(m => appendUI(m.role, m.content));
+            }
             renderList();
+            save();
         }
 
         document.getElementById('new-chat-btn').onclick = () => {
             currentChatId = Date.now().toString();
             chats.unshift({id: currentChatId, title: 'New Chat', history: []});
-            save(); loadChat(currentChatId);
+            save();
+            loadChat(currentChatId);
         };
 
-        window.deleteChat = (id) => { chats = chats.filter(c => c.id !== id); save(); location.reload(); };
-        window.renameChat = (id) => { const n = prompt("새 이름:"); if(n){ chats.find(c=>c.id===id).title=n; save(); renderList(); }};
-        function save() { localStorage.setItem('gemai_v2', JSON.stringify(chats)); }
+        window.deleteChat = (id) => {
+            if(!confirm("삭제할까요?")) return;
+            chats = chats.filter(c => c.id !== id);
+            if(currentChatId === id) {
+                currentChatId = chats.length > 0 ? chats[0].id : null;
+            }
+            save();
+            if(currentChatId) loadChat(currentChatId); else location.reload();
+        };
+
+        window.renameChat = (id) => {
+            const n = prompt("새 대화 이름:");
+            if(n) { chats.find(c=>c.id===id).title = n; save(); renderList(); }
+        };
+
+        function save() { localStorage.setItem('gemai_storage', JSON.stringify(chats)); }
 
         function appendUI(role, text) {
-            const group = document.createElement('div'); group.className = 'message-group';
-            group.innerHTML = role === 'user' ? `<div class="message-box user-msg">${text}</div>` : 
-                `<div class="ai-msg"><span class="ai-icon">⟡</span><div class="ai-text">${marked.parse(text)}</div></div>`;
+            const group = document.createElement('div');
+            group.className = 'message-group';
+            // 마크다운 파싱 적용 (코드 블록 포함)
+            const contentHTML = role === 'user' ? text : marked.parse(text);
+            
+            group.innerHTML = role === 'user' 
+                ? `<div class="message-box user-msg">${contentHTML}</div>`
+                : `<div class="ai-msg"><span class="ai-icon">⟡</span><div class="ai-text">${contentHTML}</div></div>`;
+            
             chatDisplay.appendChild(group);
+            // 새로 생성된 코드 블록에 하이라이팅 강제 적용
+            group.querySelectorAll('pre code').forEach((block) => { hljs.highlightElement(block); });
             chatDisplay.scrollTop = chatDisplay.scrollHeight;
         }
 
         async function handleSend() {
-            const text = userInput.value.trim(); if(!text) return;
+            const text = userInput.value.trim();
+            if(!text) return;
             if(!currentChatId) document.getElementById('new-chat-btn').onclick();
-            
+
             appendUI('user', text);
             const chat = chats.find(c => c.id === currentChatId);
-            if(chat.title === 'New Chat') chat.title = text.substring(0,10);
-            chat.history.push({role:'user', content:text});
+            if(chat.title === 'New Chat') chat.title = text.substring(0, 15);
+            chat.history.push({role: 'user', content: text});
             
-            userInput.value = ''; userInput.style.height = 'auto';
+            userInput.value = '';
+            userInput.style.height = 'auto';
             setAIState('thinking');
-            
+
             try {
-                const res = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({messages: chat.history})});
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ messages: chat.history })
+                });
                 const data = await res.json();
+                
                 setAIState('speaking');
-                appendUI('assistant', data.content);
-                chat.history.push({role:'assistant', content:data.content});
-                save(); renderList();
+                const aiResponse = data.content || "에러가 발생했습니다.";
+                appendUI('assistant', aiResponse);
+                chat.history.push({role: 'assistant', content: aiResponse});
+                save();
+                renderList();
                 setTimeout(() => setAIState('sleeping'), 4000);
-            } catch { setAIState('sleeping'); }
+            } catch (e) {
+                appendUI('assistant', "❌ 서버 연결 실패");
+                setAIState('sleeping');
+            }
         }
 
         sendBtn.onclick = handleSend;
-        userInput.onkeydown = (e) => { if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); handleSend(); }};
-        userInput.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
+        userInput.onkeydown = (e) => { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); handleSend(); }};
         
-        if(chats.length > 0) loadChat(chats[0].id); else setAIState('sleeping');
+        // 입력창 자동 높이 조절
+        userInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        // 초기 로드: 이전 챗 불러오기 기능 수정
+        if(chats.length > 0) {
+            loadChat(chats[0].id);
+        } else {
+            setAIState('sleeping');
+        }
     </script>
 </body>
 </html>
