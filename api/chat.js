@@ -15,12 +15,17 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         "model": "meta-llama/llama-3.1-8b-instruct",
-        "messages": messages
+        "messages": [
+          { "role": "system", "content": "너는 친절하고 똑똑한 AI 비서 GEMAI야. 반드시 한국어로 답변해줘." },
+          ...messages
+        ],
+        "temperature": 0.5,
+        "max_tokens": 1000
       })
     });
 
     const data = await response.json();
-    if (data.error) return res.status(data.error.code || 500).json({ error: data.error.message });
+    if (data.error) return res.status(500).json({ error: data.error.message });
     return res.status(200).json({ content: data.choices[0].message.content });
   } catch (error) {
     return res.status(500).json({ error: "서버 통신 오류" });

@@ -36,7 +36,7 @@
         const faceEmoji = document.getElementById('face-emoji');
         const statusText = document.getElementById('status-text');
 
-        let chats = JSON.parse(localStorage.getItem('gemai_db')) || [];
+        let chats = JSON.parse(localStorage.getItem('gemai_v2')) || [];
         let currentChatId = null;
 
         function setAIState(state) {
@@ -72,8 +72,8 @@
         };
 
         window.deleteChat = (id) => { chats = chats.filter(c => c.id !== id); save(); location.reload(); };
-        window.renameChat = (id) => { const n = prompt("Name:"); if(n){ chats.find(c=>c.id===id).title=n; save(); renderList(); }};
-        function save() { localStorage.setItem('gemai_db', JSON.stringify(chats)); }
+        window.renameChat = (id) => { const n = prompt("새 이름:"); if(n){ chats.find(c=>c.id===id).title=n; save(); renderList(); }};
+        function save() { localStorage.setItem('gemai_v2', JSON.stringify(chats)); }
 
         function appendUI(role, text) {
             const group = document.createElement('div'); group.className = 'message-group';
@@ -85,14 +85,16 @@
 
         async function handleSend() {
             const text = userInput.value.trim(); if(!text) return;
-            if(!currentChatId) document.getElementById('new-chat-btn').click();
+            if(!currentChatId) document.getElementById('new-chat-btn').onclick();
             
             appendUI('user', text);
             const chat = chats.find(c => c.id === currentChatId);
             if(chat.title === 'New Chat') chat.title = text.substring(0,10);
             chat.history.push({role:'user', content:text});
             
-            userInput.value = ''; setAIState('thinking');
+            userInput.value = ''; userInput.style.height = 'auto';
+            setAIState('thinking');
+            
             try {
                 const res = await fetch('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({messages: chat.history})});
                 const data = await res.json();
@@ -100,12 +102,14 @@
                 appendUI('assistant', data.content);
                 chat.history.push({role:'assistant', content:data.content});
                 save(); renderList();
-                setTimeout(() => setAIState('sleeping'), 3000);
+                setTimeout(() => setAIState('sleeping'), 4000);
             } catch { setAIState('sleeping'); }
         }
 
         sendBtn.onclick = handleSend;
         userInput.onkeydown = (e) => { if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); handleSend(); }};
+        userInput.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
+        
         if(chats.length > 0) loadChat(chats[0].id); else setAIState('sleeping');
     </script>
 </body>
