@@ -8,17 +8,28 @@
 </head>
 <body>
     <aside class="sidebar">
-        <div class="sidebar-header"><span>☰ GEMAI chat</span><span>+</span></div>
-        <div class="search-box"><input type="text" placeholder="Search chats..."></div>
-        <div class="chat-list"><div class="chat-item active">New Chat</div></div>
-        <div class="user-profile"><span>flippy@figma.com</span></div>
+        <div class="sidebar-header">
+            <span>☰ GEMAI chat</span>
+            <div class="new-chat-btn" id="new-chat-btn" title="New Chat">+</div>
+        </div>
+        <div class="search-box"><input type="text" id="search-input" placeholder="Search chats..."></div>
+        <div class="chat-list" id="chat-list">
+            <div class="chat-item active">New Chat</div>
+        </div>
+        <div class="user-profile">
+            <div class="avatar">👤</div>
+            <span>flippy@figma.com</span>
+        </div>
     </aside>
 
     <main class="main-content">
         <h1 class="main-title">GEMAI</h1>
         <div class="split-view">
             <div class="panel chat-display" id="chat-display">
-                <div class="message-box ai-msg">⟡ Hello! How can I help you today?</div>
+                <div class="ai-msg">
+                    <span class="ai-icon">⟡</span>
+                    <div class="ai-text">반갑습니다! 무엇을 도와드릴까요?</div>
+                </div>
             </div>
             <div class="panel face-panel">(FACE Area)</div>
         </div>
@@ -37,26 +48,63 @@
         const chatDisplay = document.getElementById('chat-display');
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
+        const chatList = document.getElementById('chat-list');
+        const newChatBtn = document.getElementById('new-chat-btn');
+        
         let chatHistory = [];
 
-        // 텍스트 길이에 따라 입력창 높이 자동 조절
+        // 텍스트 영역 자동 높이 조절
         userInput.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = (this.scrollHeight) + 'px';
         });
 
+        // 사이드바 새 채팅 기능
+        newChatBtn.addEventListener('click', () => {
+            chatDisplay.innerHTML = '<div class="ai-msg"><span class="ai-icon">⟡</span><div class="ai-text">새로운 대화를 시작합니다.</div></div>';
+            chatHistory = [];
+            const items = document.querySelectorAll('.chat-item');
+            items.forEach(i => i.classList.remove('active'));
+            const newItem = document.createElement('div');
+            newItem.className = 'chat-item active';
+            newItem.textContent = 'New Chat';
+            chatList.prepend(newItem);
+        });
+
+        function appendMessage(role, text) {
+            const group = document.createElement('div');
+            group.className = 'message-group';
+            
+            if (role === 'user') {
+                group.innerHTML = `<div class="message-box user-msg">${text}</div>`;
+                // 사이드바 제목 업데이트 (첫 메시지 기준)
+                if (chatHistory.length === 0) {
+                    document.querySelector('.chat-item.active').textContent = text;
+                }
+            } else {
+                const htmlContent = marked.parse(text);
+                group.innerHTML = `
+                    <div class="ai-msg">
+                        <span class="ai-icon">⟡</span>
+                        <div class="ai-text">${htmlContent}</div>
+                    </div>`;
+            }
+            chatDisplay.appendChild(group);
+            chatDisplay.scrollTop = chatDisplay.scrollHeight;
+        }
+
         async function handleSend() {
             const text = userInput.value.trim();
             if (!text) return;
 
-            const userMsg = document.createElement('div');
-            userMsg.className = 'message-box user-msg';
-            userMsg.textContent = text;
-            chatDisplay.appendChild(userMsg);
-            
+            appendMessage('user', text);
             userInput.value = '';
             userInput.style.height = 'auto';
-            chatDisplay.scrollTop = chatDisplay.scrollHeight;
+
+            const loading = document.createElement('div');
+            loading.className = 'ai-msg';
+            loading.innerHTML = `<span class="ai-icon">⟡</span><div class="ai-text">생각 중...</div>`;
+            chatDisplay.appendChild(loading);
 
             try {
                 const response = await fetch('/api/chat', {
@@ -65,24 +113,27 @@
                     body: JSON.stringify({ messages: [...chatHistory, { role: 'user', content: text }] })
                 });
                 const data = await response.json();
-                
-                const aiMsg = document.createElement('div');
-                aiMsg.className = 'message-box ai-msg';
+                chatDisplay.removeChild(loading);
+
                 if (data.content) {
-                    aiMsg.innerHTML = `⟡ ${marked.parse(data.content)}`;
+                    appendMessage('assistant', data.content);
                     chatHistory.push({ role: 'user', content: text }, { role: 'assistant', content: data.content });
                 } else {
-                    aiMsg.textContent = `⚠️ 에러: ${data.error}`;
+                    appendMessage('assistant', `⚠️ 에러: ${data.error}`);
                 }
-                chatDisplay.appendChild(aiMsg);
-                chatDisplay.scrollTop = chatDisplay.scrollHeight;
             } catch (err) {
-                console.error(err);
+                if (chatDisplay.contains(loading)) chatDisplay.removeChild(loading);
+                appendMessage('assistant', '❌ 연결 실패');
             }
         }
 
         sendBtn.addEventListener('click', handleSend);
-        userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } });
+        userInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        });
     </script>
 </body>
 </html>
