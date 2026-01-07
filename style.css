@@ -1,0 +1,37 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Inter', sans-serif; background-color: #fff; height: 100vh; display: flex; overflow: hidden;
+}
+.sidebar {
+    width: 260px; background-color: #f9f9f9; border-right: 1px solid #e0e0e0;
+    display: flex; flex-direction: column; padding: 16px;
+}
+.sidebar-header { display: flex; justify-content: space-between; margin-bottom: 20px; font-weight: 600; }
+.new-chat-btn { cursor: pointer; font-size: 20px; }
+.search-box input {
+    width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 20px;
+}
+.chat-list { flex: 1; overflow-y: auto; }
+.chat-item { padding: 10px; font-size: 13px; cursor: pointer; border-radius: 6px; }
+.chat-item.active { background-color: #fff; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.user-profile { padding-top: 15px; border-top: 1px solid #e0e0e0; display: flex; align-items: center; font-size: 12px; }
+.avatar { width: 24px; height: 24px; background: #ddd; border-radius: 50%; margin-right: 10px; }
+
+.main-content { flex: 1; display: flex; flex-direction: column; padding: 40px; position: relative; }
+.main-title { font-size: 40px; margin-bottom: 20px; font-weight: 300; }
+.split-view { display: flex; gap: 20px; flex: 1; margin-bottom: 100px; }
+.panel { flex: 1; border: 1px solid #ddd; border-radius: 12px; padding: 20px; overflow-y: auto; }
+.chat-display { display: flex; flex-direction: column; gap: 15px; }
+.message-box { padding: 12px; border-radius: 8px; font-size: 14px; line-height: 1.6; }
+.user-msg { background-color: #f3f3f3; align-self: flex-start; width: 100%; }
+.ai-msg { display: flex; gap: 10px; }
+.face-panel { background-color: #eee; display: flex; align-items: center; justify-content: center; color: #888; }
+
+.input-wrapper { position: absolute; bottom: 40px; left: 40px; right: 40px; }
+.input-container {
+    border: 1px solid #ccc; border-radius: 15px; padding: 15px; background: #fff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+.input-field { width: 100%; border: none; outline: none; resize: none; font-size: 14px; margin-bottom: 10px; }
+.input-actions { display: flex; justify-content: space-between; align-items: center; }
+.send-btn { width: 32px; height: 32px; border-radius: 50%; background: #333; color: #fff; border: none; cursor: pointer; }
