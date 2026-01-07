@@ -14,25 +14,23 @@ export default async function handler(req, res) {
         "X-Title": "GEMAI"
       },
       body: JSON.stringify({
-        // 현재 가장 원활하게 작동하는 모델로 교체
-        "model": "meta-llama/llama-3.1-8b-instruct:free",
+        // 'meta-llama/llama-3.1-8b-instruct:free' 대신 표준 경로 사용
+        "model": "meta-llama/llama-3.1-8b-instruct", 
         "messages": messages,
-        "temperature": 0.8,
-        "top_p": 0.9
+        "temperature": 0.7
       })
     });
 
     const data = await response.json();
 
     if (data.error) {
-      console.error('OpenRouter Error Details:', data.error);
-      return res.status(data.error.code || 500).json({ 
-        error: `모델 에러: ${data.error.message}` 
-      });
+      // 429(Too many requests) 대응 메시지 포함
+      const msg = data.error.code === 429 ? "사용자가 많아 잠시 제한되었습니다. 1분 뒤 시도해주세요." : data.error.message;
+      return res.status(data.error.code || 500).json({ error: msg });
     }
 
     return res.status(200).json({ content: data.choices[0].message.content });
   } catch (error) {
-    return res.status(500).json({ error: "서버 통신 중 알 수 없는 오류가 발생했습니다." });
+    return res.status(500).json({ error: "서버 통신 오류가 발생했습니다." });
   }
 }

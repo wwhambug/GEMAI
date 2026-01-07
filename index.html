@@ -8,19 +8,19 @@
 </head>
 <body>
     <aside class="sidebar">
-        <div class="sidebar-header"><span>☰ GEMAI chat</span><span id="new-chat-btn" style="cursor:pointer">+</span></div>
+        <div class="sidebar-header"><span>☰ GEMAI chat</span><span>+</span></div>
         <div class="search-box"><input type="text" placeholder="Search chats..."></div>
-        <div class="chat-list" id="chat-list"><div class="chat-item active">New Chat</div></div>
-        <div class="user-profile"><div class="avatar"></div><span>flippy@figma.com</span></div>
+        <div class="chat-list"><div class="chat-item active">New Chat</div></div>
+        <div class="user-profile"><span>flippy@figma.com</span></div>
     </aside>
 
     <main class="main-content">
         <h1 class="main-title">GEMAI</h1>
         <div class="split-view">
             <div class="panel chat-display" id="chat-display">
-                <div class="message-box ai-msg"><span class="ai-icon">⟡</span><div class="ai-text">Hello! How can I help you today?</div></div>
+                <div class="message-box ai-msg">⟡ Hello! How can I help you today?</div>
             </div>
-            <div class="panel face-panel" id="face-area"><span class="face-text">(FACE Area)</span></div>
+            <div class="panel face-panel">(FACE Area)</div>
         </div>
         <div class="input-wrapper">
             <div class="input-container">
@@ -39,37 +39,24 @@
         const sendBtn = document.getElementById('send-btn');
         let chatHistory = [];
 
-        // 입력창 높이 자동 조절
+        // 텍스트 길이에 따라 입력창 높이 자동 조절
         userInput.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = (this.scrollHeight) + 'px';
         });
 
-        function appendMessage(role, text) {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = role === 'user' ? 'message-box user-msg' : 'message-box ai-msg';
-            if (role === 'user') {
-                msgDiv.textContent = text;
-            } else {
-                const parsed = typeof marked !== 'undefined' ? marked.parse(text) : text;
-                msgDiv.innerHTML = `<span class="ai-icon">⟡</span><div class="ai-text">${parsed}</div>`;
-            }
-            chatDisplay.appendChild(msgDiv);
-            chatDisplay.scrollTop = chatDisplay.scrollHeight;
-        }
-
         async function handleSend() {
             const text = userInput.value.trim();
             if (!text) return;
 
-            appendMessage('user', text);
+            const userMsg = document.createElement('div');
+            userMsg.className = 'message-box user-msg';
+            userMsg.textContent = text;
+            chatDisplay.appendChild(userMsg);
+            
             userInput.value = '';
-            userInput.style.height = 'auto'; // 높이 초기화
-
-            const loading = document.createElement('div');
-            loading.className = 'message-box ai-msg';
-            loading.innerHTML = `<span class="ai-icon">⟡</span><div class="ai-text">Thinking...</div>`;
-            chatDisplay.appendChild(loading);
+            userInput.style.height = 'auto';
+            chatDisplay.scrollTop = chatDisplay.scrollHeight;
 
             try {
                 const response = await fetch('/api/chat', {
@@ -77,29 +64,25 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ messages: [...chatHistory, { role: 'user', content: text }] })
                 });
-
                 const data = await response.json();
-                chatDisplay.removeChild(loading);
-
+                
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'message-box ai-msg';
                 if (data.content) {
-                    appendMessage('assistant', data.content);
+                    aiMsg.innerHTML = `⟡ ${marked.parse(data.content)}`;
                     chatHistory.push({ role: 'user', content: text }, { role: 'assistant', content: data.content });
                 } else {
-                    appendMessage('assistant', `⚠️ ${data.error}`);
+                    aiMsg.textContent = `⚠️ 에러: ${data.error}`;
                 }
+                chatDisplay.appendChild(aiMsg);
+                chatDisplay.scrollTop = chatDisplay.scrollHeight;
             } catch (err) {
-                if (chatDisplay.contains(loading)) chatDisplay.removeChild(loading);
-                appendMessage('assistant', '❌ 연결 오류가 발생했습니다.');
+                console.error(err);
             }
         }
 
         sendBtn.addEventListener('click', handleSend);
-        userInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-            }
-        });
+        userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } });
     </script>
 </body>
 </html>

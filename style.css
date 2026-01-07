@@ -3,65 +3,43 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Inter', sans-serif; background: #fff; height: 100vh; display: flex; overflow: hidden; }
 
-/* 사이드바 스타일 최적화 */
-.sidebar { width: 260px; background: #F9F9F9; border-right: 1px solid #EAEAEA; display: flex; flex-direction: column; padding: 24px 16px; }
+/* 사이드바 */
+.sidebar { width: 260px; background: #F9F9F9; border-right: 1px solid #EEE; display: flex; flex-direction: column; padding: 24px 16px; }
 .sidebar-header { display: flex; justify-content: space-between; font-weight: 600; font-size: 14px; margin-bottom: 24px; }
 .search-box input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #DDD; margin-bottom: 20px; outline: none; }
 .chat-list { flex: 1; overflow-y: auto; }
 .chat-item { padding: 10px 12px; font-size: 13px; color: #444; border-radius: 8px; cursor: pointer; margin-bottom: 4px; }
 .chat-item.active { background: #FFF; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-weight: 500; }
 .user-profile { padding-top: 20px; border-top: 1px solid #EEE; display: flex; align-items: center; font-size: 12px; color: #666; }
-.avatar { width: 24px; height: 24px; border-radius: 50%; background: #DDD; margin-right: 12px; }
 
 /* 메인 레이아웃 */
 .main-content { flex: 1; display: flex; flex-direction: column; padding: 60px 40px 40px; position: relative; }
 .main-title { font-size: 48px; font-weight: 500; margin-bottom: 32px; letter-spacing: -2px; }
-.split-view { display: flex; gap: 20px; flex: 1; margin-bottom: 120px; }
+.split-view { display: flex; gap: 20px; flex: 1; margin-bottom: 140px; }
 .panel { flex: 1; border: 1px solid #E5E5E5; border-radius: 12px; padding: 24px; overflow-y: auto; background: #FFF; }
 .face-panel { background: #EFEFEF; display: flex; align-items: center; justify-content: center; color: #AAA; }
 
-/* 메시지 박스 */
-.chat-display { display: flex; flex-direction: column; gap: 20px; }
+/* 메시지 디자인 */
+.chat-display { display: flex; flex-direction: column; gap: 16px; }
 .message-box { padding: 14px 18px; border-radius: 12px; font-size: 15px; line-height: 1.6; max-width: 90%; }
 .user-msg { background: #F3F3F3; align-self: flex-start; }
 .ai-msg { display: flex; gap: 12px; }
-.ai-icon { font-size: 18px; }
 
-/* 하단 입력창 (텍스트 밀림 수정) */
+/* 하단 입력창 (디자인 정밀 수정) */
 .input-wrapper { position: absolute; bottom: 40px; left: 40px; right: 40px; }
-/* 하단 입력창 영역 수정 */
 .input-container {
-    border: 1px solid #E0E0E0;
-    border-radius: 16px;
-    padding: 16px 20px;
-    background: #FFF;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
-    display: flex;
-    flex-direction: column;
+    border: 1px solid #E0E0E0; border-radius: 16px; padding: 16px 20px;
+    background: #FFF; box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    display: flex; flex-direction: column;
 }
-
 .input-field { 
-    width: 100%; 
-    border: none; 
-    outline: none; 
-    resize: none; 
-    font-size: 15px; 
-    font-family: inherit; 
-    min-height: 24px; 
-    max-height: 150px; /* 너무 길어지면 스크롤 생성 */
-    margin-bottom: 12px; 
-    line-height: 1.5;
-    overflow-y: auto;
+    width: 100%; border: none; outline: none; resize: none; 
+    font-size: 15px; font-family: inherit; min-height: 24px; 
+    margin-bottom: 12px; line-height: 1.5; color: #333;
 }
-
-.input-actions { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    border-top: none; /* 이전 디자인의 선 제거 */
-}
-.action-icons { display: flex; gap: 14px; font-size: 18px; filter: grayscale(1); opacity: 0.5; }
+.input-actions { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.action-icons { display: flex; gap: 14px; font-size: 18px; filter: grayscale(1); opacity: 0.4; }
 .send-btn { 
-    width: 34px; height: 34px; border-radius: 50%; background: #000; color: #FFF; 
+    width: 32px; height: 32px; border-radius: 50%; background: #000; color: #FFF; 
     border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
