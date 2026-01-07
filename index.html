@@ -1,3 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GEMAI Chat</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <span>☰ GEMAI chat</span>
+            <span class="new-chat-btn" id="new-chat-btn">+</span>
+        </div>
+        <div class="search-box"><input type="text" placeholder="Search chats..."></div>
+        <div class="chat-list" id="chat-list">
+            <div class="chat-item active">New Chat</div>
+        </div>
+        <div class="user-profile"><div class="avatar">👤</div><span>user@example.com</span></div>
+    </aside>
+
+    <main class="main-content">
+        <h1 class="main-title">GEMAI</h1>
+        <div class="split-view">
+            <div class="panel chat-display" id="chat-display">
+                <div class="message-box ai-msg">
+                    <span class="ai-icon">⟡</span>
+                    <div class="ai-text">반갑습니다. 무엇을 도와드릴까요?</div>
+                </div>
+            </div>
+            <div class="panel face-panel">
+                <span class="face-text">(FACE Area)</span>
+            </div>
+        </div>
+        <div class="input-wrapper">
+            <div class="input-container">
+                <textarea id="user-input" class="input-field" rows="1" placeholder="메시지를 입력하세요..."></textarea>
+                <div class="input-actions">
+                    <div class="action-icons">
+                        <span>🖼️</span><span>code</span><span>🎤</span>
+                    </div>
+                    <button id="send-btn" class="send-btn">↑</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
 <script>
     const chatDisplay = document.getElementById('chat-display');
     const userInput = document.getElementById('user-input');
@@ -56,3 +104,5 @@
     sendBtn.addEventListener('click', handleSend);
     userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } });
 </script>
+</body>
+</html>
